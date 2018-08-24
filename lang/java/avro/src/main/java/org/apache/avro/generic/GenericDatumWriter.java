@@ -67,8 +67,7 @@ public class GenericDatumWriter<D> implements DatumWriter<D> {
       throws IOException {
     LogicalType logicalType = schema.getLogicalType();
     if (datum != null && logicalType != null) {
-      Conversion<?> conversion = getData()
-          .getConversionByClass(datum.getClass(), logicalType);
+      Conversion<?> conversion = getConversionByClass(datum.getClass(), logicalType);
       writeWithoutConversion(schema,
           convert(schema, logicalType, conversion, datum), out);
     } else {
@@ -110,6 +109,10 @@ public class GenericDatumWriter<D> implements DatumWriter<D> {
     }
   }
 
+  protected Conversion<?> getConversionByClass(Class<?> type, LogicalType logicalType) {
+    return getData().getConversionByClass(type, logicalType);
+  }
+
   /** Called to write data.*/
   protected void writeWithoutConversion(Schema schema, Object datum, Encoder out)
     throws IOException {
@@ -119,11 +122,7 @@ public class GenericDatumWriter<D> implements DatumWriter<D> {
       case ENUM:   writeEnum(schema, datum, out);   break;
       case ARRAY:  writeArray(schema, datum, out);  break;
       case MAP:    writeMap(schema, datum, out);    break;
-      case UNION:
-        int index = resolveUnion(schema, datum);
-        out.writeIndex(index);
-        write(schema.getTypes().get(index), datum, out);
-        break;
+      case UNION:  writeUnion(schema, datum, out);  break;
       case FIXED:   writeFixed(schema, datum, out);   break;
       case STRING:  writeString(schema, datum, out);  break;
       case BYTES:   writeBytes(datum, out);           break;
@@ -155,6 +154,15 @@ public class GenericDatumWriter<D> implements DatumWriter<D> {
     for (Field f : schema.getFields()) {
       writeField(datum, f, out, state);
     }
+  }
+
+  /** Called to write a union.  May be overridden for alternate union
+   * representations.*/
+  protected void writeUnion(Schema schema, Object datum, Encoder out)
+      throws IOException {
+    int index = resolveUnion(schema, datum);
+    out.writeIndex(index);
+    write(schema.getTypes().get(index), datum, out);
   }
 
   /** Called to write a single field of a record. May be overridden for more

@@ -77,8 +77,13 @@ public class SpecificDatumReader<T> extends GenericDatumReader<T> {
     if (logicalType == null) {
       return null;
     }
-    Conversion<?> conversion = conversions.get().peekLast()
-        .get(logicalType.getName());
+
+    Conversion<?> conversion = null;
+    Map<String, Conversion<?>> conversionMap = conversions.get().peekLast();
+    if (conversionMap != null) {
+      conversion = conversionMap.get(logicalType.getName());
+    }
+
     if (conversion == null) {
       conversion = super.getConversionFor(logicalType);
     }
@@ -93,8 +98,11 @@ public class SpecificDatumReader<T> extends GenericDatumReader<T> {
     // Check for logical types conversions used by the specific compiler. No
     // need to use the class because the compiler always produces code with the
     // same class if it used a conversion.
-    Conversion<?> conversion = conversions.get().peekLast()
-        .get(logicalType.getName());
+    Conversion<?> conversion = null;
+    Map<String, Conversion<?>> conversionMap = conversions.get().peekLast();
+    if (conversionMap != null) {
+      conversion = conversionMap.get(logicalType.getName());
+    }
     if (conversion == null) {
       conversion = super.getConversionByClass(type, logicalType);
     }
