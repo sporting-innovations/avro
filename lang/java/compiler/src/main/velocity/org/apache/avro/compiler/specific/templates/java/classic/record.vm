@@ -158,7 +158,7 @@ public class ${this.mangle($schema.getName())}#if ($schema.isError()) extends or
   protected static final org.apache.avro.Conversions.DecimalConversion DECIMAL_CONVERSION = new org.apache.avro.Conversions.DecimalConversion();
 #end
 
-  public static final Collection<Conversion<?>> CONVERSIONS = new ArrayList<Conversion<?>>();
+  public static final java.util.Collection<org.apache.avro.Conversion<?>> CONVERSIONS = new java.util.ArrayList<org.apache.avro.Conversion<?>>();
   static {
     CONVERSIONS.add(DATE_CONVERSION);
     CONVERSIONS.add(TIME_CONVERSION);
