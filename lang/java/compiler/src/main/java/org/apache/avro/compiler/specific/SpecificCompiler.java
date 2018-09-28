@@ -59,6 +59,7 @@ import org.apache.velocity.runtime.log.LogChute;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.apache.avro.Schema.Type.UNION;
 import static org.apache.avro.specific.SpecificData.RESERVED_WORDS;
 
 /**
@@ -660,8 +661,19 @@ public class SpecificCompiler {
 
   public boolean hasLogicalTypeField(Schema schema) {
     for (Schema.Field field : schema.getFields()) {
-      if (field.schema().getLogicalType() != null) {
+      if (field.schema().getLogicalType() != null || anyUnionMemberHasLogicalType(field.schema())) {
         return true;
+      }
+    }
+    return false;
+  }
+
+  private boolean anyUnionMemberHasLogicalType(Schema schema) {
+    if (UNION.equals(schema.getType())) {
+      for (Schema type : schema.getTypes()) {
+        if (type.getLogicalType() != null) {
+          return true;
+        }
       }
     }
     return false;
