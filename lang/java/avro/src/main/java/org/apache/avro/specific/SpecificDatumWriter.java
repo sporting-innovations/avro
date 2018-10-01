@@ -18,6 +18,8 @@
 package org.apache.avro.specific;
 
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.Map;
 
 import org.apache.avro.Conversion;
 import org.apache.avro.LogicalType;
@@ -50,6 +52,33 @@ public class SpecificDatumWriter<T> extends GenericDatumWriter<T> {
   /** Returns the {@link SpecificData} implementation used by this writer. */
   public SpecificData getSpecificData() {
     return (SpecificData) getData();
+  }
+
+  private final ThreadLocal<LinkedList<Map<String, Conversion<?>>>> conversions
+      = new ThreadLocal<LinkedList<Map<String, Conversion<?>>>>() {
+    @Override
+    protected LinkedList<Map<String, Conversion<?>>> initialValue() {
+      return new LinkedList<Map<String, Conversion<?>>>();
+    }
+  };
+
+  protected Conversion<?> getConversionByClass(Class<?> type,
+                                               LogicalType logicalType) {
+    if (logicalType == null) {
+      return null;
+    }
+    // Check for logical types conversions used by the specific compiler. No
+    // need to use the class because the compiler always produces code with the
+    // same class if it used a conversion.
+    Conversion<?> conversion = null;
+    Map<String, Conversion<?>> conversionMap = conversions.get().peekLast();
+    if (conversionMap != null) {
+      conversion = conversionMap.get(logicalType.getName());
+    }
+    if (conversion == null) {
+      conversion = super.getConversionByClass(type, logicalType);
+    }
+    return conversion;
   }
 
   @Override
@@ -88,6 +117,31 @@ public class SpecificDatumWriter<T> extends GenericDatumWriter<T> {
 
     } else {
       super.writeField(datum, f, out, state);
+    }
+  }
+
+  @Override
+  protected void writeRecord(Schema schema, Object datum, Encoder out) throws IOException {
+    // Update the current set of conversions for the record class
+    Map<String, Conversion<?>> conversionMap =
+            getSpecificData().getConversionMap(schema);
+    conversions.get().addLast(conversionMap);
+    try {
+      super.writeRecord(schema, datum, out);
+    } finally {
+      conversions.get().removeLast();
+    }
+  }
+
+  @Override
+  protected void writeUnion(Schema schema, Object datum, Encoder out) throws IOException {
+    Map<String, Conversion<?>> conversionMap =
+            getSpecificData().getConversionMap(schema);
+    conversions.get().addLast(conversionMap);
+    try {
+      super.writeUnion(schema, datum, out);
+    } finally {
+      conversions.get().removeLast();
     }
   }
 }

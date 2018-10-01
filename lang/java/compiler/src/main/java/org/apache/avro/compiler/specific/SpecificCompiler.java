@@ -59,6 +59,7 @@ import org.apache.velocity.runtime.log.LogChute;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.apache.avro.Schema.Type.UNION;
 import static org.apache.avro.specific.SpecificData.RESERVED_WORDS;
 
 /**
@@ -223,6 +224,13 @@ public class SpecificCompiler {
    */
   public void setEnableDecimalLogicalType(boolean enableDecimalLogicalType) {
     this.enableDecimalLogicalType = enableDecimalLogicalType;
+  }
+
+  /**
+   * @return true if decimal logical type conversion is enabled
+   */
+  public boolean isDecimalEnabled() {
+    return enableDecimalLogicalType;
   }
 
   private static String logChuteName = null;
@@ -651,10 +659,22 @@ public class SpecificCompiler {
     }
   }
 
+  /** Used to determine if a Schema has any field with a logical type so that Conversions can be included */
   public boolean hasLogicalTypeField(Schema schema) {
     for (Schema.Field field : schema.getFields()) {
-      if (field.schema().getLogicalType() != null) {
+      if (field.schema().getLogicalType() != null || anyUnionMemberHasLogicalType(field.schema())) {
         return true;
+      }
+    }
+    return false;
+  }
+
+  private boolean anyUnionMemberHasLogicalType(Schema schema) {
+    if (UNION.equals(schema.getType())) {
+      for (Schema type : schema.getTypes()) {
+        if (type.getLogicalType() != null) {
+          return true;
+        }
       }
     }
     return false;

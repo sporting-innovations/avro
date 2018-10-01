@@ -121,6 +121,23 @@ public class TestSpecificCompiler {
   }
 
   @Test
+  public void testOnlyUnionLogicalType() throws IOException {
+    SpecificCompiler compiler = createCompiler();
+    compiler.setEnableDecimalLogicalType(true);
+
+    Schema decimalUnionSchema = Schema.createUnion(
+      Schema.create(Schema.Type.NULL),
+      LogicalTypes.decimal(6, 4)
+          .addToSchema(Schema.create(Schema.Type.BYTES))
+    );
+
+    Schema parentRecordSchema = SchemaBuilder.record("sample.record").fields()
+      .name("foo").type(decimalUnionSchema).noDefault().endRecord();
+
+    assertTrue(compiler.hasLogicalTypeField(parentRecordSchema));
+  }
+
+  @Test
   public void testCanReadTemplateFilesOnTheFilesystem() throws IOException, URISyntaxException{
     SpecificCompiler compiler = createCompiler();
     compiler.compileToDestination(this.src, this.outputDir);
