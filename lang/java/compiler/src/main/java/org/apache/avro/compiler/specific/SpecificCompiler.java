@@ -659,6 +659,7 @@ public class SpecificCompiler {
     }
   }
 
+  /** Used to determine if a Schema has any field with a logical type so that Conversions can be included */
   public boolean hasLogicalTypeField(Schema schema) {
     for (Schema.Field field : schema.getFields()) {
       if (field.schema().getLogicalType() != null || anyUnionMemberHasLogicalType(field.schema())) {
