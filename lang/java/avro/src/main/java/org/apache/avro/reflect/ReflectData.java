@@ -186,8 +186,9 @@ public class ReflectData extends SpecificData {
   @Override
   protected boolean isArray(Object datum) {
     if (datum == null) return false;
+    Class<?> clazz = datum.getClass();
     return (datum instanceof Collection)
-      || datum.getClass().isArray()
+      || (clazz.isArray() && clazz.getComponentType() != Byte.TYPE)
       || isNonStringMap(datum);
   }
 
