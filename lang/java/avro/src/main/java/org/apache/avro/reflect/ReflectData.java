@@ -186,8 +186,9 @@ public class ReflectData extends SpecificData {
   @Override
   protected boolean isArray(Object datum) {
     if (datum == null) return false;
+    Class<?> clazz = datum.getClass();
     return (datum instanceof Collection)
-      || datum.getClass().isArray()
+      || (clazz.isArray() && clazz.getComponentType() != Byte.TYPE)
       || isNonStringMap(datum);
   }
 
@@ -736,6 +737,10 @@ public class ReflectData extends SpecificData {
     AvroSchema explicit = field.getAnnotation(AvroSchema.class);
     if (explicit != null)                                   // explicit schema
       return Schema.parse(explicit.value());
+
+    Union union = field.getAnnotation(Union.class);
+    if (union != null)
+      return getAnnotatedUnion(union, names);
 
     Schema schema = createSchema(field.getGenericType(), names);
     if (field.isAnnotationPresent(Stringable.class)) {      // Stringable
